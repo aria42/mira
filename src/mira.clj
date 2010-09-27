@@ -94,7 +94,7 @@
 (defn update-mira
   "update mira for an example returning [new-mira error?]"
   [mira datum gold-label]
-  (let [predict-label (ppredict mira datum)]
+  (let [predict-label (predict mira datum)]
        (if (= predict-label gold-label)
             ; If we get it right do nothing
             [mira false]
