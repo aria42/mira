@@ -1,0 +1,19 @@
+Implements margin-infused relaxation algorithm (MIRA). Fairly optimized. Released under Eclipse public license.
+
+Usage: All for main class mira
+===============================
+- train data-path num-iters model-outfile [trains model spits it out to model-outfile]
+- predict model-infile test-data-path  [writes one-per-line predictions to stdout]
+- test model-infile test-data-path [computes error of model on data in test-data-path]
+
+Format of labeled data: Each line looks like
+"label feat1:val1 feat2:val2 ... featN:valN"
+where feati is any string and vali is a double. 
+
+Format of unlabeled data: Each line looks like
+"feat1:val1 feat2:val2 ... featN:valN"
+where feati is any string and vali is a double. 
+
+Author
+=============
+Aria Haghighi <me@aria42.com>
