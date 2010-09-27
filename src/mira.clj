@@ -1,5 +1,6 @@
 (ns mira  
-  {:doc "Implements margin-infused relaxation algorithm (MIRA). Fairly optimized."
+  {:doc "Implements margin-infused relaxation algorithm (MIRA)
+         multi-class classifcation Fairly optimized."         
    :author "Aria Haghighi <me@aria42.com>"}
   (:gen-class)
   (:use [clojure.string :only [join]]
@@ -68,7 +69,8 @@
         label-parts (partition-all 5 (get-labels mira))
         part-fn (fn [label-part]
                   (reduce 
-                    (fn [res label] (assoc res label (score-fn label)))
+                    (fn [res label]
+                       (assoc res label (score-fn label)))
                     {} label-part))
         score-parts (pmap part-fn label-parts)
         scores (apply merge score-parts)]
@@ -105,7 +107,8 @@
                   new-mira (-> mira 
                             ; Update Current Weights
                             (update-in [:label-weights]
-                              update-weights datum gold-label predict-label alpha)
+                              update-weights datum gold-label
+                                    predict-label alpha)
                             ; Update Average (cumulative) Weights  
                             (update-in [:cum-label-weights]
                               update-weights datum gold-label 
@@ -118,7 +121,8 @@
   [mira labeled-data-fn]
    (reduce
      (fn [[cur-mira num-errors] [datum gold-label]]
-       (let [[new-mira error?] (update-mira cur-mira datum gold-label)]          
+       (let [[new-mira error?] 
+              (update-mira cur-mira datum gold-label)]          
           (swap! +updates-left+ dec)
           [new-mira (if error? (inc num-errors) num-errors)]))
      [mira 0]
@@ -132,7 +136,8 @@
         mira
         (let [[new-mira num-errors]  (train-iter mira labeled-data-fn)]          
           (println 
-            (format "[MIRA] On iter %s made %s training mistakes" iter num-errors))                  
+            (format "[MIRA] On iter %s made %s training mistakes" 
+                    iter num-errors))                  
           ; If we don't make mistakes, never will again  
           (if (zero? num-errors) 
             new-mira (recur (inc iter) new-mira))))))
@@ -156,7 +161,8 @@
   (for [line (line-seq (reader path))
         :let [pieces (.split #^String line "\\s+")
               label (first pieces)
-              feat-vec (feat-vec-from-line (join " " (rest pieces)))]]
+              feat-vec (feat-vec-from-line 
+                          (join " " (rest pieces)))]]
     [feat-vec label]))              
 
 (defn load-data 
@@ -175,11 +181,13 @@
             labels (into #{} (map second (labeled-data-fn)))
             num-iters (Integer/parseInt num-iters)]
         ; For Average Weight Calculation
-        (compare-and-set! +updates-left+ nil (* num-iters (count (labeled-data-fn))))
+        (compare-and-set! +updates-left+ nil 
+            (* num-iters (count (labeled-data-fn))))
         (let [mira (train labeled-data-fn labels num-iters  (constantly 1))
-              avg-weights (into {}                
-                            (for [[label sum-weights] (:cum-label-weights mira)]
-                              [label (normalize-vec sum-weights)]))]
+              avg-weights 
+                (into {}                
+                  (for [[label sum-weights] (:cum-label-weights mira)]
+                    [label (normalize-vec sum-weights)]))]
           (println "[MIRA] Done Training. Writing weights to " outfile)
           (spit outfile avg-weights)))
     "predict"
@@ -197,4 +205,5 @@
             predict-labels (map #(predict mira %) (map first labeled-test))
             num-errors (->> (map vector gold-labels predict-labels)
                             (sum (fn [[gold predict]] (if (not= gold predict) 1 0))))]
-        (println "Error: " (double (/ num-errors (count gold-labels)))))))        
+        (println "Error: " (double (/ num-errors (count gold-labels))))))
+    (shutdown-agents))
